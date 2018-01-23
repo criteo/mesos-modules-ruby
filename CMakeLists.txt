@@ -20,12 +20,13 @@ include_directories(
 )
 
 set(SOURCES
-  hook.hpp hook.cpp
+  RubyEngine.cpp
+  RubyEngine.hpp
+  RubyHook.cpp
+  RubyHook.hpp
   main.cpp
-  wrapper.hpp wrapper.cpp
 )
 
-add_definitions(-DTEST_MAIN)
 add_compile_options(${MESOS_CFLAGS} ${RUBY_CFLAGS})
 include_directories(${MESOS_INCLUDE_DIRS} ${RUBY_INCLUDE_DIRS})
 link_directories(${MESOS_LIBRARY_DIRS} ${RUBY_LIBRARY_DIRS})
