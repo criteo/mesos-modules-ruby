@@ -13,6 +13,9 @@ int main(int argc, char* argv[])
   mesos::FrameworkInfo frameworkInfo;
   mesos::SlaveInfo slaveInfo;
 
+  taskInfo.set_name("test_task");
+  executorInfo.set_name("test_exec");
+
   std::unique_ptr<mesos::Hook> hook(createHook(parameters));
 
   hook->slaveRunTaskLabelDecorator(taskInfo,

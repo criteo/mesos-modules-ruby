@@ -3,7 +3,7 @@ def slaveRunTaskLabelDecorator name
 end
 
 def slaveRemoveExecutorHook name
-  puts "about to remove task '#{name}'"
+  puts "about to remove executor '#{name}'"
   puts "boom!"
   puts 0/0
 end
