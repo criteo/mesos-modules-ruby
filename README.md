@@ -4,4 +4,4 @@ $ mkdir build
 $ cd build  
 $ cmake ..  
 $ make  
-$ ./ruby_hook ../hook.rb
+$ ./test

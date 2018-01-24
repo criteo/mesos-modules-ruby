@@ -1,17 +1,17 @@
-#include "RubyEngine.hpp"
 #include "RubyHook.hpp"
 #include <memory>
 
 int main(int argc, char* argv[])
 {
-  RubyEngine engine("hook");
-  if (!engine.load_script(argc > 1 ? argv[1] : "./hook.rb")) return -1;
-
   mesos::Parameters parameters;
   mesos::TaskInfo taskInfo;
   mesos::ExecutorInfo executorInfo;
   mesos::FrameworkInfo frameworkInfo;
   mesos::SlaveInfo slaveInfo;
+
+  auto p = parameters.add_parameter();
+  p->set_key("script_path");
+  p->set_value(argc > 1 ? argv[1] : "../hook.rb");
 
   taskInfo.set_name("test_task");
   executorInfo.set_name("test_exec");

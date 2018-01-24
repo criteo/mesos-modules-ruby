@@ -24,7 +24,6 @@ set(SOURCES
   RubyEngine.hpp
   RubyHook.cpp
   RubyHook.hpp
-  main.cpp
 )
 
 add_compile_options(${MESOS_CFLAGS} ${RUBY_CFLAGS})
@@ -32,4 +31,7 @@ include_directories(${MESOS_INCLUDE_DIRS} ${RUBY_INCLUDE_DIRS})
 link_directories(${MESOS_LIBRARY_DIRS} ${RUBY_LIBRARY_DIRS})
 link_libraries(${MESOS_LIBRARIES} ${RUBY_LIBRARIES})
 
-add_executable(ruby_hook ${SOURCES})
+add_library(rubyhook SHARED ${SOURCES})
+
+add_executable(test main.cpp)
+target_link_libraries(test rubyhook)

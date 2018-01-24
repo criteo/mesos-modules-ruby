@@ -1,11 +1,11 @@
 def slaveRunTaskLabelDecorator name
-  puts "about to run task '#{name}'"
+  puts "ruby: about to run task '#{name}'"
 end
 
 def slaveRemoveExecutorHook name
-  puts "about to remove executor '#{name}'"
-  puts "boom!"
+  puts "ruby: about to remove executor '#{name}'"
+  puts "ruby: boom!"
   puts 0/0
 end
 
-puts "ruby hook loaded"
+puts "ruby: hook loaded"
