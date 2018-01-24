@@ -11,7 +11,7 @@
 class RubyHook : public mesos::Hook
 {
   std::mutex mutex;
-  RubyEngine ruby_engine;
+  RubyEngine ruby;
 
 public:
   RubyHook(const mesos::Parameters& parameters);

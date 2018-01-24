@@ -1,8 +1,11 @@
 #include "RubyHook.hpp"
+#include <glog/logging.h>
 #include <memory>
 
 int main(int argc, char* argv[])
 {
+  google::InitGoogleLogging(argv[0]);
+
   mesos::Parameters parameters;
   mesos::TaskInfo taskInfo;
   mesos::ExecutorInfo executorInfo;
@@ -25,5 +28,6 @@ int main(int argc, char* argv[])
 
   hook->slaveRemoveExecutorHook(frameworkInfo, executorInfo);
 
+  google::ShutdownGoogleLogging();
   return 0;
 }

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(ruby_hook)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfatal-errors -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wfatal-errors -std=c++11")
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(MESOS REQUIRED mesos)

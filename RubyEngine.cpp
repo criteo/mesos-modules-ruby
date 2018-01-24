@@ -18,3 +18,15 @@ bool RubyEngine::load_script(const std::string& scriptname)
   rb_load_protect(rb_str_new_cstr(scriptname.c_str()), 0, &state);
   return (state == 0);
 }
+
+bool RubyEngine::is_callback_defined(const std::string& symbol)
+{
+  return (rb_funcall(rb_cObject, rb_intern("private_method_defined?"), 1, rb_str_new_cstr(symbol.c_str())) == Qtrue);
+}
+
+std::string RubyEngine::handle_exception()
+{
+  VALUE lasterr = rb_errinfo();
+  rb_set_errinfo(Qnil);
+  return RSTRING_PTR(rb_obj_as_string(lasterr));
+}
