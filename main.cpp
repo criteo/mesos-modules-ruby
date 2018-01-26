@@ -20,13 +20,14 @@ int main(int argc, char* argv[])
   executorInfo.set_name("test_exec");
 
   std::unique_ptr<mesos::Hook> hook(createHook(parameters));
+  if (hook) {
+    hook->slaveRunTaskLabelDecorator(taskInfo,
+                                     executorInfo,
+                                     frameworkInfo,
+                                     slaveInfo);
 
-  hook->slaveRunTaskLabelDecorator(taskInfo,
-                                   executorInfo,
-                                   frameworkInfo,
-                                   slaveInfo);
-
-  hook->slaveRemoveExecutorHook(frameworkInfo, executorInfo);
+    hook->slaveRemoveExecutorHook(frameworkInfo, executorInfo);
+  }
 
   google::ShutdownGoogleLogging();
   return 0;

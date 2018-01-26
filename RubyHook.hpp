@@ -3,10 +3,10 @@
 
 #include "RubyEngine.hpp"
 
+#include <glog/logging.h>
+
 #include <mesos/hook.hpp>
 #include <mesos/module/hook.hpp>
-
-#include <mutex>
 
 class RubyHook : public mesos::Hook
 {
@@ -25,16 +25,25 @@ public:
   virtual Try<Nothing> slaveRemoveExecutorHook(
     const mesos::FrameworkInfo& frameworkInfo,
     const mesos::ExecutorInfo& executorInfo) override;
-
-private:
-  void handle_ruby_exception(); //TODO: handle SIGABRT too
 };
 
 static mesos::Hook* createHook(const mesos::Parameters& parameters)
 {
-  return new RubyHook(parameters);
+  try {
+    return new RubyHook(parameters);
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "RubyHook error: " << e.what();
+    return nullptr; // already wrapped in a Try<> at calling site
+  }
 }
 
-extern mesos::modules::Module<mesos::Hook> com_criteo_mesos_rubyhook;
+mesos::modules::Module<mesos::Hook> com_criteo_mesos_RubyHook(
+    MESOS_MODULE_API_VERSION,
+    MESOS_VERSION,
+    "Criteo Mesos",
+    "mesos@criteo.com",
+    "Ruby hook module",
+    nullptr,
+    createHook);
 
 #endif // __HOOK_HPP__

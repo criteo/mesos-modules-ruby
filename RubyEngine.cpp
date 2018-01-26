@@ -26,7 +26,11 @@ bool RubyEngine::is_callback_defined(const std::string& symbol)
 
 std::string RubyEngine::handle_exception()
 {
-  VALUE lasterr = rb_errinfo();
-  rb_set_errinfo(Qnil);
-  return RSTRING_PTR(rb_obj_as_string(lasterr));
+  if (state != 0) {
+    state = 0;
+    VALUE lasterr = rb_errinfo();
+    rb_set_errinfo(Qnil);
+    return RSTRING_PTR(rb_obj_as_string(lasterr));
+  }
+  return std::string();
 }

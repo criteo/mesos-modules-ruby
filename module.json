@@ -1,0 +1,18 @@
+ {
+   "libraries": [
+     {
+       "file": "/home/c.juniet/work/ruby_hook/build/librubyhook.so",
+       "modules": [
+         {
+           "name": "com_criteo_mesos_RubyHook",
+           "parameters": [
+             {
+               "key": "script_path",
+               "value": "/home/c.juniet/work/ruby_hook/hook.rb"
+             }
+           ]
+         }
+       ]
+     }
+   ]
+ }

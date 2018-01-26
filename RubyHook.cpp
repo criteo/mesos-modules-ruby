@@ -1,5 +1,6 @@
 #include "RubyHook.hpp"
 #include <ruby.h>
+#include <stdexcept>
 
 #define ScriptName                 "RubyHook"
 #define ScriptPathParam            "script_path"
@@ -23,12 +24,18 @@ VALUE slaveRemoveExecutorHook_wrapper(VALUE obj)
 RubyHook::RubyHook(const mesos::Parameters& parameters)
   : ruby(ScriptName)
 {
+  std::string scriptpath;
   foreach (const mesos::Parameter& parameter, parameters.parameter()) {
-    if (parameter.has_key() && parameter.key() == ScriptPathParam) {
-      if (!parameter.has_value() || !ruby.load_script(parameter.value())) {
-        //XXX:TODO: handle error
-      }
+    if (parameter.has_key() && parameter.key() == ScriptPathParam && parameter.has_value()) {
+      scriptpath = parameter.value();
     }
+  }
+
+  if (scriptpath.empty()) {
+    throw std::invalid_argument("missing parameter " ScriptPathParam);
+  }
+  if (!ruby.load_script(scriptpath)) {
+    throw std::runtime_error(ruby.handle_exception());
   }
 }
 
@@ -44,10 +51,10 @@ Result<mesos::Labels> RubyHook::slaveRunTaskLabelDecorator(
       VALUE taskname = rb_str_new_cstr(taskInfo.name().c_str());
       VALUE result = rb_protect(::slaveRunTaskLabelDecorator_wrapper, taskname, &state);
       if (state != 0) {
-        ruby.handle_exception();
+        return Error(ruby.handle_exception());
       } else {
         mesos::Labels labels;
-        //XXX:TODO: fill labels with result
+        //TODO: fill labels with result
         // auto l = labels.add_labels();
         // l->set_key("foo");
         // l->set_value("bar");
@@ -68,18 +75,11 @@ Try<Nothing> RubyHook::slaveRemoveExecutorHook(
       int state = 0;
       VALUE execname = rb_str_new_cstr(executorInfo.name().c_str());
       VALUE result = rb_protect(::slaveRemoveExecutorHook_wrapper, execname, &state);
-      if (state != 0) ruby.handle_exception();
+      if (state != 0) {
+        return Error(ruby.handle_exception());
+      }
     }
   }
 
   return Nothing();
 }
-
-mesos::modules::Module<mesos::Hook> com_criteo_mesos_rubyhook(
-    MESOS_MODULE_API_VERSION,
-    MESOS_VERSION,
-    "Criteo Mesos",
-    "mesos@criteo.com",
-    "Ruby hook module",
-    nullptr,
-    createHook);
