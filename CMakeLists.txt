@@ -4,13 +4,13 @@ project(ruby_hook)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wfatal-errors -std=c++11")
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(MESOS REQUIRED mesos)
-pkg_check_modules(RUBY REQUIRED ruby)
+
+pkg_check_modules(RUBY REQUIRED ruby-2.4)
 
 if(DEFINED ENV{MESOS_BUILD_DIR})
   set(MESOS_BUILD_DIR "$ENV{MESOS_BUILD_DIR}")
 else()
-  set(MESOS_BUILD_DIR "$ENV{HOME}/repos/mesos/build")
+  set(MESOS_BUILD_DIR "${PWD}")
 endif()
 
 include_directories(
@@ -18,6 +18,20 @@ include_directories(
   "${MESOS_BUILD_DIR}/3rdparty/glog-0.3.3/src"
   "${MESOS_BUILD_DIR}/3rdparty/protobuf-3.3.0/src"
 )
+
+pkg_check_modules(MESOS QUIET mesos)
+
+if (NOT MESOS_FOUND) # Assume build tree has not been installed yet
+  set(MESOS_CFLAGS -DPICOJSON_USE_INT64 -D__STDC_FORMAT_MACROS)
+  set(MESOS_INCLUDE_DIRS ${MESOS_BUILD_DIR}/include)
+  set(MESOS_LIBRARY_DIRS ${MESOS_BUILD_DIR}/src/.libs)
+  set(MESOS_LIBRARIES mesos)
+  include_directories(
+    "${MESOS_BUILD_DIR}/3rdparty/libprocess/include"
+    "${MESOS_BUILD_DIR}/3rdparty/picojson-1.3.0"
+    "${MESOS_BUILD_DIR}/3rdparty/stout/include"
+  )
+endif()
 
 set(SOURCES
   RubyEngine.cpp
@@ -33,5 +47,7 @@ link_libraries(${MESOS_LIBRARIES} ${RUBY_LIBRARIES})
 
 add_library(rubyhook SHARED ${SOURCES})
 
-add_executable(test main.cpp)
-target_link_libraries(test rubyhook)
+if(DEFINED BUILD_MAIN)
+  add_executable(test main.cpp)
+  target_link_libraries(test rubyhook)
+endif()
