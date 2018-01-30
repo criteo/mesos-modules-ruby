@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(ruby_hook)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wfatal-errors -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fpermissive -std=c++11")
 
 find_package(PkgConfig REQUIRED)
 
@@ -47,7 +47,7 @@ link_libraries(${MESOS_LIBRARIES} ${RUBY_LIBRARIES})
 
 add_library(rubyhook SHARED ${SOURCES})
 
-if(DEFINED BUILD_MAIN)
+if(DEFINED ENV{BUILD_MAIN})
   add_executable(test main.cpp)
   target_link_libraries(test rubyhook)
 endif()
