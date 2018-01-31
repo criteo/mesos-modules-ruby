@@ -5,3 +5,7 @@ def slaveRunTaskLabelDecorator taskinfo
   puts "[ruby] decorated labels '#{taskinfo}'"
   return taskinfo
 end
+
+def slaveRemoveExecutorHook execinfo
+  puts "[ruby] about to remove executor '#{execinfo}'"
+end

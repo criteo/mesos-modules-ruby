@@ -1,49 +1,86 @@
 #include "RubyHook.hpp"
-#include <iostream>
 #include <memory>
+#include <gtest/gtest.h>
 
-int main(int argc, char* argv[])
+
+class RubyHookTest : public ::testing::Test
 {
-  google::InitGoogleLogging(argv[0]);
-
-  mesos::Parameters parameters;
+protected:
+  static std::unique_ptr<mesos::Hook> hook;
   mesos::TaskInfo taskInfo;
   mesos::ExecutorInfo executorInfo;
   mesos::FrameworkInfo frameworkInfo;
   mesos::SlaveInfo slaveInfo;
 
-  auto p = parameters.add_parameter();
-  p->set_key("script_path");
-  p->set_value(argc > 1 ? argv[1] : "./hook.rb");
+public:
+  static std::string script_path_str;
 
-  taskInfo.set_name("test_task");
-  taskInfo.mutable_task_id()->set_value("1");
-  taskInfo.mutable_slave_id()->set_value("2");
-  auto l = taskInfo.mutable_labels()->add_labels();
-  l->set_key("foo");
-  l->set_value("bar");
-  std::cout << "[C++] set: (key: \"foo\" => val: \"bar\")" << std::endl;
-
-  executorInfo.set_name("test_exec");
-
-  std::unique_ptr<mesos::Hook> hook(createHook(parameters));
-  if (hook) {
-    auto result = hook->slaveRunTaskLabelDecorator(taskInfo,
-                                                   executorInfo,
-                                                   frameworkInfo,
-                                                   slaveInfo);
-
-    if (result.isSome()) {
-      for (const auto& l : result.get().labels()) {
-        std::cout << "[C++] found: (key: \"" << l.key() << "\" => val: \"" << l.value() << "\")" << std::endl;
-      }
-    } else {
-      std::cout << "[C++] no label returned" << std::endl;
-    }
-
-    hook->slaveRemoveExecutorHook(frameworkInfo, executorInfo);
+  static void SetUpTestCase()
+  {
+    mesos::Parameters parameters;
+    auto p = parameters.add_parameter();
+    p->set_key("script_path");
+    p->set_value(script_path_str);
+    hook.reset(createHook(parameters));
   }
 
+  void SetUp()
+  {
+    taskInfo.set_name("test_task");
+    taskInfo.mutable_task_id()->set_value("1");
+    taskInfo.mutable_slave_id()->set_value("2");
+    {
+      auto l = taskInfo.mutable_labels()->add_labels();
+      l->set_key("foo");
+      l->set_value("bar");
+    }
+
+    executorInfo.set_name("test_exec");
+  }
+};
+
+std::unique_ptr<mesos::Hook> RubyHookTest::hook;
+std::string RubyHookTest::script_path_str;
+
+TEST_F(RubyHookTest, SlaveRunTaskLabelDecoratorTest)
+{
+  ASSERT_TRUE(hook);
+
+  auto result = hook->slaveRunTaskLabelDecorator(taskInfo,
+                                                 executorInfo,
+                                                 frameworkInfo,
+                                                 slaveInfo);
+  ASSERT_TRUE(result.isSome());
+
+  for (const auto& l : result.get().labels()) {
+    if (l.key() == "foo") { // modified by Ruby
+      ASSERT_STREQ("barbaz", l.value().c_str());
+    }
+    if (l.key() == "toto") { // added by Ruby
+      ASSERT_STREQ("titi", l.value().c_str());
+    }
+  }
+}
+
+TEST_F(RubyHookTest, SlaveRemoveExecutorHookTest)
+{
+  ASSERT_TRUE(hook);
+
+  auto result = hook->slaveRemoveExecutorHook(frameworkInfo, executorInfo);
+  ASSERT_FALSE(result.isError());
+}
+
+int main(int argc, char* argv[])
+{
+  google::InitGoogleLogging(argv[0]);
+
+  ::testing::InitGoogleTest(&argc, argv);
+
+  RubyHookTest::script_path_str = (argc > 1 ? argv[1] : "./hook.rb");
+
+  auto res = RUN_ALL_TESTS();
+
   google::ShutdownGoogleLogging();
-  return 0;
+
+  return res;
 }

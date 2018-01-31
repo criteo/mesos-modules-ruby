@@ -47,7 +47,7 @@ link_libraries(${MESOS_LIBRARIES} ${RUBY_LIBRARIES})
 
 add_library(rubyhook SHARED ${SOURCES})
 
-if(DEFINED ENV{BUILD_MAIN})
-  add_executable(test main.cpp)
-  target_link_libraries(test rubyhook)
-endif()
+add_executable(test_hook main.cpp)
+target_include_directories(test_hook PUBLIC ${MESOS_BUILD_DIR}/3rdparty/googletest-release-1.8.0/googletest/include)
+target_link_libraries(test_hook rubyhook ${MESOS_BUILD_DIR}/3rdparty/.libs/libgmock.a)
+add_custom_target(check COMMAND test_hook ${CMAKE_SOURCE_DIR}/hook.rb)

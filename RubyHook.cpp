@@ -1,6 +1,10 @@
 #include "RubyHook.hpp"
-#include <ruby.h>
 #include <stdexcept>
+
+// undef already defined macros to reduce warnings
+#undef NORETURN
+#undef UNREACHABLE
+#include <ruby.h>
 
 #define ScriptName                 "RubyHook"
 #define ScriptPathParam            "script_path"
@@ -23,6 +27,7 @@ VALUE slaveRemoveExecutorHook_wrapper(VALUE obj)
 }
 
 // map Ruby strings kv-pairs to mesos::Labels
+// Ruby prototype for hash foreach closure is boggus and requires -fpermissive to compile.
 static int unwrapLabels(VALUE key, VALUE value, VALUE arg)
 {
   auto labels = (mesos::Labels*) arg;
@@ -54,6 +59,8 @@ VALUE wrapTaskInfo(const mesos::TaskInfo& taskInfo)
 
   return hash;
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 // build the RubyHook and load a Ruby script located by the 'script_path' parameter
 RubyHook::RubyHook(const mesos::Parameters& parameters)
@@ -97,6 +104,7 @@ Result<mesos::Labels> RubyHook::slaveRunTaskLabelDecorator(
         if (!NIL_P(ruby_labels) && RB_TYPE_P(ruby_labels, T_HASH) && RHASH_SIZE(ruby_labels) > 0) {
           mesos::Labels labels;
           // iterate over the hash and add labels from kv-pairs
+          // Ruby prototype for hash foreach closure is boggus and requires -fpermissive to compile.
           rb_hash_foreach(ruby_labels, unwrapLabels, (VALUE)&labels);
           return labels; // will *replace* original labels (i.e. not merge)
         }
