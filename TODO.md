@@ -5,4 +5,4 @@
 - ~~map script results to the hook~~
 - ~~better handle script exceptions~~
 - ~~add comments over Ruby C API calls~~
-- add unit tests
+- ~~add unit tests~~
