@@ -36,6 +36,15 @@ public:
     }
 
     executorInfo.set_name("test_exec");
+    {
+      auto env = executorInfo.mutable_command()->mutable_environment();
+      auto var = env->add_variables();
+      var->set_name("foo");
+      var->set_value("bar");
+      var = env->add_variables();
+      var->set_name("deleted");
+      var->set_value("whatever");
+    }
   }
 };
 
@@ -68,6 +77,24 @@ TEST_F(RubyHookTest, SlaveRemoveExecutorHookTest)
 
   auto result = hook->slaveRemoveExecutorHook(frameworkInfo, executorInfo);
   ASSERT_FALSE(result.isError());
+}
+
+TEST_F(RubyHookTest, SlaveExecutorEnvironmentDecorator) {
+  ASSERT_TRUE(hook);
+
+  auto result = hook->slaveExecutorEnvironmentDecorator(executorInfo);
+  ASSERT_TRUE(result.isSome());
+
+  for(const auto& envVar: result.get().variables()) {
+    if (envVar.name() == "foo") { // modified by Ruby
+      ASSERT_STREQ("barbaz", envVar.value().c_str());
+    }
+    if (envVar.name() == "toto") { // added by Ruby
+      ASSERT_STREQ("titi", envVar.value().c_str());
+    }
+    ASSERT_STRNE("deleted", envVar.name().c_str()); // deleted by Ruby
+  }
+
 }
 
 int main(int argc, char* argv[])
