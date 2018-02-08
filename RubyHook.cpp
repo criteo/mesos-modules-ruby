@@ -167,7 +167,7 @@ Result<mesos::Environment> RubyHook::slaveExecutorEnvironmentDecorator(
             mesos::Environment env;
             // iterate over the hash and add env from kv-pairs
             // Ruby prototype for hash foreach closure is boggus and requires -fpermissive to compile.
-            rb_hash_foreach(ruby_env, unwrapEnv, (VALUE)&env);
+            rb_hash_foreach(ruby_env, (int (*)(...))unwrapEnv, (VALUE)&env);
             return env; // will *replace* original env (i.e. not merge)
           }
         }
@@ -203,7 +203,7 @@ Result<mesos::Labels> RubyHook::slaveRunTaskLabelDecorator(
           mesos::Labels labels;
           // iterate over the hash and add labels from kv-pairs
           // Ruby prototype for hash foreach closure is boggus and requires -fpermissive to compile.
-          rb_hash_foreach(ruby_labels, unwrapLabels, (VALUE)&labels);
+          rb_hash_foreach(ruby_labels, (int (*)(...))unwrapLabels, (VALUE)&labels);
           return labels; // will *replace* original labels (i.e. not merge)
         }
       }
