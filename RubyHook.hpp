@@ -22,6 +22,9 @@ public:
     const mesos::FrameworkInfo& frameworkInfo,
     const mesos::SlaveInfo& slaveInfo) override;
 
+  virtual Result<mesos::Environment> slaveExecutorEnvironmentDecorator(
+    const mesos::ExecutorInfo& executorInfo) override;
+
   virtual Try<Nothing> slaveRemoveExecutorHook(
     const mesos::FrameworkInfo& frameworkInfo,
     const mesos::ExecutorInfo& executorInfo) override;
