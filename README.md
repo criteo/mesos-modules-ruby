@@ -1,3 +1,10 @@
+Mesos Modules Ruby
+------------------
+
+This repository is a collection of **experimental** mesos modules to call ruby scripts implementing hooks.
+
+This project is not battle-tested, use it at your own risk.
+
 Build Instructions
 ------------------
 
