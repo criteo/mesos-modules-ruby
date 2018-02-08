@@ -6,6 +6,7 @@ RubyEngine::RubyEngine(const std::string& name)
   ruby_init();
   ruby_script(name.c_str());
   ruby_init_loadpath();
+  ruby_options(0, 0);
 }
 
 RubyEngine::~RubyEngine()
