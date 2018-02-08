@@ -9,8 +9,9 @@ Build Instructions
 ------------------
 
 ```shell
-    $ export MESOS_BUILD_DIR=[ directory where Mesos was BUILT, e.g. ~/repos/mesos/build ]
-    $ export PKG_CONFIG_PATH=[ probably the same directory or ${installdir}/lib/pkgconfig ]
+    $ export MESOS_SOURCE_DIR=[ directory of Mesos source code, e.g. ~/repos/mesos/ ]
+    $ export MESOS_BUILD_DIR=[ directory where Mesos was BUILT if different from $MESOS_SOURCE_DIR/build ]
+    $ # export PKG_CONFIG_PATH=[ probably the same directory or ${installdir}/lib/pkgconfig ]
     $ mkdir build
     $ cd build
     $ cmake ..
