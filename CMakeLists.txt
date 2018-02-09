@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
-project(ruby_hook)
+project(mesos_ruby_modules)
 
 set(CMAKE_MACOSX_RPATH 1)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fPIC -fpermissive -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wno-macro-redefined -std=c++11")
 
 find_package(PkgConfig REQUIRED)
 
@@ -26,8 +26,6 @@ if(NOT DEFINED MESOS_INCLUDE_DIR)
   set(MESOS_INCLUDE_DIR "${MESOS_BUILD_DIR}/include")
 endif()
 
-message( "Build folder is ${MESOS_BUILD_DIR}")
-
 # Required include path lookup in Build dir
 file(GLOB BOOST_SRCH_PATH "${MESOS_BUILD_DIR}/3rdparty/boost-*")
 find_path(BOOST_INCLUDE_DIR NAMES "boost/version.hpp" PATHS ${BOOST_SRCH_PATH} NO_DEFAULT_PATH)
@@ -46,8 +44,8 @@ include_directories(
   ${GLOG_INCLUDE_DIR}
   ${PROTOBUF_INCLUDE_DIR}
   ${PICOJSON_INCLUDE_DIR}
-  "${MESOS_SOURCE_DIR}/3rdparty/stout/include"
-  "${MESOS_SOURCE_DIR}/3rdparty/libprocess/include"
+  ${MESOS_SOURCE_DIR}/3rdparty/stout/include
+  ${MESOS_SOURCE_DIR}/3rdparty/libprocess/include
   )
 
 pkg_check_modules(MESOS QUIET mesos)
@@ -59,31 +57,27 @@ if (NOT MESOS_FOUND) # Assume build tree has not been installed yet
   set(MESOS_LIBRARIES mesos)
 endif()
 
-set(ENGINE_SOURCES
-  RubyEngine.cpp
-  RubyEngine.hpp
-)
-
-set(HOOK_SOURCES
-  RubyHook.cpp
-  RubyHook.hpp
-)
-
-set(ISOLATOR_SOURCES
-  RubyIsolator.cpp
-  RubyIsolator.hpp
+set(MODULES_SOURCES
+  src/RubyEngine.cpp
+  src/RubyHook.cpp
+  src/RubyIsolator.cpp
 )
 
 add_compile_options(${MESOS_CFLAGS} ${RUBY_CFLAGS})
-include_directories(${MESOS_INCLUDE_DIRS} ${RUBY_INCLUDE_DIRS})
+include_directories(./include/ ${MESOS_INCLUDE_DIRS} ${RUBY_INCLUDE_DIRS})
 link_directories(${MESOS_LIBRARY_DIRS} ${RUBY_LIBRARY_DIRS})
 link_libraries(${MESOS_LIBRARIES} ${RUBY_LIBRARIES})
 
-add_library(rubyengine OBJECT ${ENGINE_SOURCES})
-add_library(rubyhook SHARED $<TARGET_OBJECTS:rubyengine> ${HOOK_SOURCES})
-add_library(rubyisolator SHARED $<TARGET_OBJECTS:rubyengine> ${ISOLATOR_SOURCES})
+add_library(ruby_modules SHARED ${MODULES_SOURCES})
 
-add_executable(test_hook main.cpp)
-target_include_directories(test_hook PUBLIC ${MESOS_BUILD_DIR}/3rdparty/googletest-release-1.8.0/googletest/include)
-target_link_libraries(test_hook rubyhook ${MESOS_BUILD_DIR}/3rdparty/.libs/libgmock.a)
-add_custom_target(check COMMAND test_hook ${CMAKE_SOURCE_DIR}/hook.rb)
+# Unit Tests building & execution
+
+add_executable(test_rmodules tests/main.cpp)
+
+file(GLOB GTEST_SRCH_PATH "${MESOS_BUILD_DIR}/3rdparty/googletest-*/googletest/include")
+find_path(GTEST_INCLUDE_DIR NAMES "gtest/gtest.h" PATHS ${GTEST_SRCH_PATH} NO_DEFAULT_PATH)
+
+target_include_directories(test_rmodules PUBLIC ${GTEST_INCLUDE_DIR})
+target_link_libraries(test_rmodules ruby_modules ${MESOS_BUILD_DIR}/3rdparty/.libs/libgmock.a)
+add_custom_target(check COMMAND test_rmodules ${CMAKE_SOURCE_DIR}/tests/mesos_modules.rb)
+

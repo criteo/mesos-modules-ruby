@@ -1,16 +1,16 @@
+
+#include <stout/synchronized.hpp>
+
 #include "RubyHook.hpp"
 #include <stdexcept>
 
-// undef already defined macros to reduce warnings
-#undef NORETURN
-#undef UNREACHABLE
 #include <ruby.h>
 
-#define ScriptName                 "RubyHook"
-#define ScriptPathParam            "script_path"
 #define SlaveRunTaskLabelDecorator "slaveRunTaskLabelDecorator"
 #define SlaveExecutorEnvironmentDecorator "slaveExecutorEnvironmentDecorator"
 #define SlaveRemoveExecutorHook    "slaveRemoveExecutorHook"
+
+using criteo::mesos::UniqueRubyEngine;
 
 namespace {
   void hash_set(VALUE hash, const std::string& key, const std::string& value) {
@@ -127,28 +127,17 @@ VALUE wrapExecutorInfo(const mesos::ExecutorInfo& executorInfo)
 ////////////////////////////////////////////////////////////////////////////////
 // build the RubyHook and load a Ruby script located by the 'script_path' parameter
 RubyHook::RubyHook(const mesos::Parameters& parameters)
-  : ruby(ScriptName)
 {
-  std::string scriptpath;
-  foreach (const mesos::Parameter& parameter, parameters.parameter()) {
-    if (parameter.has_key() && parameter.key() == ScriptPathParam && parameter.has_value()) {
-      scriptpath = parameter.value();
-    }
-  }
-
-  if (scriptpath.empty()) {
-    throw std::invalid_argument("missing parameter " ScriptPathParam);
-  }
-  if (!ruby.load_script(scriptpath)) {
-    throw std::runtime_error(ruby.handle_exception());
-  }
+  UniqueRubyEngine::getInstance().start(parameters);
 }
 
 // mesos::Hook callback on slaveExecutorEnvironmentDecorator
 Result<mesos::Environment> RubyHook::slaveExecutorEnvironmentDecorator(
   const mesos::ExecutorInfo& executorInfo)
 {
-  synchronized (mutex) { // Ruby VM is not reentrant
+  UniqueRubyEngine& ruby = UniqueRubyEngine::getInstance();
+  std::mutex * mutex = ruby.mutex();
+  synchronized(mutex) { // Ruby VM is not reentrant
     if (ruby.is_callback_defined(SlaveExecutorEnvironmentDecorator)) {
       // call Ruby in a protect env to avoid exception leakage
       int state = 0;
@@ -186,7 +175,10 @@ Result<mesos::Labels> RubyHook::slaveRunTaskLabelDecorator(
   const mesos::FrameworkInfo& frameworkInfo,
   const mesos::SlaveInfo& slaveInfo)
 {
-  synchronized (mutex) { // Ruby VM is not reentrant
+  UniqueRubyEngine& ruby = UniqueRubyEngine::getInstance();
+
+  std::mutex * mutex = ruby.mutex();
+  synchronized(mutex) { // Ruby VM is not reentrant
     if (ruby.is_callback_defined(SlaveRunTaskLabelDecorator)) {
       // call Ruby in a protect env to avoid exception leakage
       int state = 0;
@@ -219,6 +211,8 @@ Try<Nothing> RubyHook::slaveRemoveExecutorHook(
   const mesos::FrameworkInfo& frameworkInfo,
   const mesos::ExecutorInfo& executorInfo)
 {
+  UniqueRubyEngine& ruby = UniqueRubyEngine::getInstance();
+  std::mutex * mutex = ruby.mutex();
   synchronized (mutex) { // Ruby VM is not reentrant
     if (ruby.is_callback_defined(SlaveRemoveExecutorHook)) {
       // call Ruby in a protect env to avoid exception leakage

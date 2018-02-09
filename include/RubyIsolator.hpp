@@ -14,23 +14,19 @@ namespace criteo {
 
     class RubyIsolator : public ::mesos::slave::Isolator
     {
-      RubyEngine ruby;
-      std::mutex mutex;
-
     public:
 
       RubyIsolator(const ::mesos::Parameters& parameters);
-      virtual ~RubyIsolator();
 
       virtual process::Future<Option<::mesos::slave::ContainerLaunchInfo>> prepare(
           const ::mesos::ContainerID& containerId,
-          const ::mesos::slave::ContainerConfig& containerConfig);
+          const ::mesos::slave::ContainerConfig& containerConfig) override;
 
       virtual process::Future<Nothing> cleanup(
-          const ::mesos::ContainerID& containerId);
+          const ::mesos::ContainerID& containerId) override;
 
     };
-  }
-}
+   }
+ }
 
 #endif
