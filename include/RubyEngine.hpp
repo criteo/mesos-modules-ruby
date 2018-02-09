@@ -2,6 +2,7 @@
 #define __RUBYENGINE_HPP__
 
 #include <string>
+#include <mutex>
 #include <mesos/mesos.hpp>
 
 const std::string PARAM_SCRIPT_PATH = "script_path";
