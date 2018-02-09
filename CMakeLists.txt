@@ -8,22 +8,10 @@ find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(RUBY REQUIRED ruby-2.4)
 
-if(DEFINED ENV{MESOS_SOURCE_DIR})
-  set(MESOS_SOURCE_DIR $ENV{MESOS_SOURCE_DIR})
-  set(MESOS_INCLUDE_DIR ${MESOS_SOURCE_DIR}/include)
-  set(MESOS_BUILD_DIR ${MESOS_SOURCE_DIR}/build) # Convention!
-endif()
-
 if(DEFINED ENV{MESOS_BUILD_DIR})
   set(MESOS_BUILD_DIR $ENV{MESOS_BUILD_DIR})
-endif()
-
-if(NOT DEFINED MESOS_BUILD_DIR)
+else()
   set(MESOS_BUILD_DIR "${PWD}")
-endif()
-
-if(NOT DEFINED MESOS_INCLUDE_DIR)
-  set(MESOS_INCLUDE_DIR "${MESOS_BUILD_DIR}/include")
 endif()
 
 # Required include path lookup in Build dir
@@ -40,19 +28,20 @@ file(GLOB PICOJSON_SRCH_PATH "${MESOS_BUILD_DIR}/3rdparty/picojson-*")
 find_path(PICOJSON_INCLUDE_DIR NAMES "picojson.h" PATHS ${PICOJSON_SRCH_PATH} NO_DEFAULT_PATH)
 
 include_directories(
+  ./include
   ${BOOST_INCLUDE_DIR}
   ${GLOG_INCLUDE_DIR}
   ${PROTOBUF_INCLUDE_DIR}
   ${PICOJSON_INCLUDE_DIR}
-  ${MESOS_SOURCE_DIR}/3rdparty/stout/include
-  ${MESOS_SOURCE_DIR}/3rdparty/libprocess/include
+  ${MESOS_BUILD_DIR}/3rdparty/stout/include
+  ${MESOS_BUILD_DIR}/3rdparty/libprocess/include
   )
 
 pkg_check_modules(MESOS QUIET mesos)
 
 if (NOT MESOS_FOUND) # Assume build tree has not been installed yet
   set(MESOS_CFLAGS -DPICOJSON_USE_INT64 -D__STDC_FORMAT_MACROS)
-  set(MESOS_INCLUDE_DIRS ${MESOS_INCLUDE_DIR} ${MESOS_BUILD_DIR}/include)
+  set(MESOS_INCLUDE_DIRS ${MESOS_BUILD_DIR}/include)
   set(MESOS_LIBRARY_DIRS ${MESOS_BUILD_DIR}/src/.libs)
   set(MESOS_LIBRARIES mesos)
 endif()
@@ -64,7 +53,7 @@ set(MODULES_SOURCES
 )
 
 add_compile_options(${MESOS_CFLAGS} ${RUBY_CFLAGS})
-include_directories(./include/ ${MESOS_INCLUDE_DIRS} ${RUBY_INCLUDE_DIRS})
+include_directories(${MESOS_INCLUDE_DIRS} ${RUBY_INCLUDE_DIRS})
 link_directories(${MESOS_LIBRARY_DIRS} ${RUBY_LIBRARY_DIRS})
 link_libraries(${MESOS_LIBRARIES} ${RUBY_LIBRARIES})
 
