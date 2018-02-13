@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
-project(mesos_ruby_modules)
+
+set(PROJECT_NAME mesos_ruby_modules)
+project(${PROJECT_NAME})
 
 set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -Wno-macro-redefined -std=c++11")
@@ -57,7 +59,7 @@ include_directories(${MESOS_INCLUDE_DIRS} ${RUBY_INCLUDE_DIRS})
 link_directories(${MESOS_LIBRARY_DIRS} ${RUBY_LIBRARY_DIRS})
 link_libraries(${MESOS_LIBRARIES} ${RUBY_LIBRARIES})
 
-add_library(ruby_modules SHARED ${MODULES_SOURCES})
+add_library(${PROJECT_NAME} SHARED ${MODULES_SOURCES})
 
 # Unit Tests building & execution
 
@@ -67,6 +69,6 @@ file(GLOB GTEST_SRCH_PATH "${MESOS_BUILD_DIR}/3rdparty/googletest-*/googletest/i
 find_path(GTEST_INCLUDE_DIR NAMES "gtest/gtest.h" PATHS ${GTEST_SRCH_PATH} NO_DEFAULT_PATH)
 
 target_include_directories(test_rmodules PUBLIC ${GTEST_INCLUDE_DIR})
-target_link_libraries(test_rmodules ruby_modules ${MESOS_BUILD_DIR}/3rdparty/.libs/libgmock.a)
+target_link_libraries(test_rmodules ${PROJECT_NAME} ${MESOS_BUILD_DIR}/3rdparty/.libs/libgmock.a)
 add_custom_target(check COMMAND test_rmodules ${CMAKE_SOURCE_DIR}/tests/mesos_modules.rb)
 

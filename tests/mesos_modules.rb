@@ -26,12 +26,18 @@ def isolator_prepare( params )
     f.puts "-----------------"
     f.puts params.to_s
     f.puts "</PREP>"
-	end	
+	end
+  return {"pre_exec_commands" => [{"value" => "touch /tmp/rb_isolator"}]}
 end
 
 def isolator_cleanup( params )
 	pid = Process.pid
 	File.open('/tmp/ruby_isolator_stdout.txt','a') do |f| 
-		f.puts "[CLEAN] MyPID=#{pid}"
+    f.puts "<CLEAR>"
+		f.puts "MyPID=#{pid}"
+    f.puts "Params (#{params.count}):"
+    f.puts "-----------------"
+    f.puts params.to_s
+    f.puts "</CLEAR>"
 	end	
 end

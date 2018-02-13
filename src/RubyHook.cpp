@@ -10,21 +10,8 @@
 #define SlaveExecutorEnvironmentDecorator "slaveExecutorEnvironmentDecorator"
 #define SlaveRemoveExecutorHook    "slaveRemoveExecutorHook"
 
-using criteo::mesos::UniqueRubyEngine;
-
-namespace {
-  void hash_set(VALUE hash, const std::string& key, const std::string& value) {
-    rb_hash_aset(hash, rb_str_new_cstr(key.c_str()), rb_str_new_cstr(value.c_str()));
-  }
-
-  void hash_set(VALUE hash, const std::string& key, VALUE value) {
-    rb_hash_aset(hash, rb_str_new_cstr(key.c_str()), value);
-  }
-
-  bool isNonEmptyHash(VALUE hash) {
-      return (!NIL_P(hash) && RB_TYPE_P(hash, T_HASH) && RHASH_SIZE(hash) > 0);
-  }
-}
+using criteo::mesos::RubyEngineSingleton;
+using namespace criteo::mesos::helpers;
 
 
 extern "C" {
@@ -128,14 +115,14 @@ VALUE wrapExecutorInfo(const mesos::ExecutorInfo& executorInfo)
 // build the RubyHook and load a Ruby script located by the 'script_path' parameter
 RubyHook::RubyHook(const mesos::Parameters& parameters)
 {
-  UniqueRubyEngine::getInstance().start(parameters);
+  RubyEngineSingleton::getInstance().start(parameters);
 }
 
 // mesos::Hook callback on slaveExecutorEnvironmentDecorator
 Result<mesos::Environment> RubyHook::slaveExecutorEnvironmentDecorator(
   const mesos::ExecutorInfo& executorInfo)
 {
-  UniqueRubyEngine& ruby = UniqueRubyEngine::getInstance();
+  RubyEngineSingleton& ruby = RubyEngineSingleton::getInstance();
   std::mutex * mutex = ruby.mutex();
   synchronized(mutex) { // Ruby VM is not reentrant
     if (ruby.is_callback_defined(SlaveExecutorEnvironmentDecorator)) {
@@ -148,11 +135,11 @@ Result<mesos::Environment> RubyHook::slaveExecutorEnvironmentDecorator(
       }
 
       // fill in the Env from Ruby from return value; expect same structure as input
-      if (isNonEmptyHash(result)) {
+      if (is_non_empty_hash(result)) {
         VALUE ruby_cmd = rb_hash_lookup(result, rb_str_new_cstr("command"));
-        if (isNonEmptyHash(ruby_cmd)) {
+        if (is_non_empty_hash(ruby_cmd)) {
           VALUE ruby_env = rb_hash_lookup(ruby_cmd, rb_str_new_cstr("environment"));
-          if (isNonEmptyHash(ruby_env)) {
+          if (is_non_empty_hash(ruby_env)) {
             mesos::Environment env;
             // iterate over the hash and add env from kv-pairs
             // Ruby prototype for hash foreach closure is boggus and requires -fpermissive to compile.
@@ -175,7 +162,7 @@ Result<mesos::Labels> RubyHook::slaveRunTaskLabelDecorator(
   const mesos::FrameworkInfo& frameworkInfo,
   const mesos::SlaveInfo& slaveInfo)
 {
-  UniqueRubyEngine& ruby = UniqueRubyEngine::getInstance();
+  RubyEngineSingleton& ruby = RubyEngineSingleton::getInstance();
 
   std::mutex * mutex = ruby.mutex();
   synchronized(mutex) { // Ruby VM is not reentrant
@@ -189,9 +176,9 @@ Result<mesos::Labels> RubyHook::slaveRunTaskLabelDecorator(
       }
 
       // fill in the Labels from Ruby from return value; expect same structure as input
-      if (isNonEmptyHash(result)) {
+      if (is_non_empty_hash(result)) {
         VALUE ruby_labels = rb_hash_lookup(result, rb_str_new_cstr("labels"));
-        if (isNonEmptyHash(ruby_labels)) {
+        if (is_non_empty_hash(ruby_labels)) {
           mesos::Labels labels;
           // iterate over the hash and add labels from kv-pairs
           // Ruby prototype for hash foreach closure is boggus and requires -fpermissive to compile.
@@ -211,7 +198,7 @@ Try<Nothing> RubyHook::slaveRemoveExecutorHook(
   const mesos::FrameworkInfo& frameworkInfo,
   const mesos::ExecutorInfo& executorInfo)
 {
-  UniqueRubyEngine& ruby = UniqueRubyEngine::getInstance();
+  RubyEngineSingleton& ruby = RubyEngineSingleton::getInstance();
   std::mutex * mutex = ruby.mutex();
   synchronized (mutex) { // Ruby VM is not reentrant
     if (ruby.is_callback_defined(SlaveRemoveExecutorHook)) {
