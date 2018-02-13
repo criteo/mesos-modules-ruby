@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(PROJECT_NAME mesos_ruby_modules)
+set(PROJECT_NAME mesos_modules_ruby)
 project(${PROJECT_NAME})
 
 set(CMAKE_MACOSX_RPATH 1)
