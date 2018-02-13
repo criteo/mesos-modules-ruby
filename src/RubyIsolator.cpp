@@ -148,23 +148,3 @@ Future<Nothing> RubyIsolator::cleanup(
   return Nothing();
 }
 
-// Callback used by registration below...
-static Isolator* createRubyIsolator(const ::mesos::Parameters& parameters)
-{
-  try {
-    return new RubyIsolator(parameters);
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "RubyHook error: " << e.what();
-    return nullptr; // already wrapped in a Try<> at calling site
-  }
-}
-
-// Declaration of the isolator
-mesos::modules::Module<Isolator> com_criteo_mesos_RubyIsolator(
-    MESOS_MODULE_API_VERSION,
-    MESOS_VERSION,
-    "Criteo Mesos",
-    "mesos@criteo.com",
-    "Ruby isolator module",
-    nullptr,
-    createRubyIsolator);

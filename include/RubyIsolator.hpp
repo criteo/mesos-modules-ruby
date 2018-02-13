@@ -6,6 +6,7 @@
 #include <ruby.h>
 #include <mesos/mesos.hpp>
 #include <mesos/slave/isolator.hpp>
+#include <mesos/module/isolator.hpp>
 
 using ::mesos::slave::ContainerLaunchInfo;
 
@@ -36,4 +37,25 @@ namespace criteo {
    }
  }
 
-#endif
+ // Callback used by registration below...
+static mesos::slave::Isolator* createRubyIsolator(const ::mesos::Parameters& parameters)
+{
+  try {
+    return new criteo::mesos::RubyIsolator(parameters);
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "RubyHook error: " << e.what();
+    return nullptr; // already wrapped in a Try<> at calling site
+  }
+}
+
+// Declaration of the isolator
+mesos::modules::Module<mesos::slave::Isolator> com_criteo_mesos_RubyIsolator(
+    MESOS_MODULE_API_VERSION,
+    MESOS_VERSION,
+    "Criteo Mesos",
+    "mesos@criteo.com",
+    "Ruby isolator module",
+    nullptr,
+    createRubyIsolator);
+
+#endif //__RUBY_ISOLATOR_MODULE_HPP__

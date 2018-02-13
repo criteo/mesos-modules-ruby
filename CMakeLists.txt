@@ -68,7 +68,7 @@ add_executable(test_rmodules tests/main.cpp)
 file(GLOB GTEST_SRCH_PATH "${MESOS_BUILD_DIR}/3rdparty/googletest-*/googletest/include")
 find_path(GTEST_INCLUDE_DIR NAMES "gtest/gtest.h" PATHS ${GTEST_SRCH_PATH} NO_DEFAULT_PATH)
 
-target_include_directories(test_rmodules PUBLIC ${GTEST_INCLUDE_DIR})
+target_include_directories(test_rmodules PUBLIC ${GTEST_INCLUDE_DIR} tests)
 target_link_libraries(test_rmodules ${PROJECT_NAME} ${MESOS_BUILD_DIR}/3rdparty/.libs/libgmock.a)
 add_custom_target(check COMMAND test_rmodules ${CMAKE_SOURCE_DIR}/tests/mesos_modules.rb)
 
