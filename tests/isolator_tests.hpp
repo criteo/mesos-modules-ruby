@@ -1,3 +1,5 @@
+#ifndef ___ISOLATOR_TESTS_HPP__
+#define ___ISOLATOR_TESTS_HPP__
 
 #include "RubyIsolator.hpp"
 #include <memory>
@@ -58,3 +60,4 @@ TEST_F(RubyIsolatorTest, PrepareTest)
   ASSERT_STREQ("touch /tmp/rb_isolator", lauchInfo.pre_exec_commands(0).value().c_str());
 }
 
+#endif //___ISOLATOR_TESTS_HPP__
