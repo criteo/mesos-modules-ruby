@@ -1,30 +1,17 @@
+
+#include <stout/synchronized.hpp>
+
 #include "RubyHook.hpp"
 #include <stdexcept>
 
-// undef already defined macros to reduce warnings
-#undef NORETURN
-#undef UNREACHABLE
 #include <ruby.h>
 
-#define ScriptName                 "RubyHook"
-#define ScriptPathParam            "script_path"
 #define SlaveRunTaskLabelDecorator "slaveRunTaskLabelDecorator"
 #define SlaveExecutorEnvironmentDecorator "slaveExecutorEnvironmentDecorator"
 #define SlaveRemoveExecutorHook    "slaveRemoveExecutorHook"
 
-namespace {
-  void hash_set(VALUE hash, const std::string& key, const std::string& value) {
-    rb_hash_aset(hash, rb_str_new_cstr(key.c_str()), rb_str_new_cstr(value.c_str()));
-  }
-
-  void hash_set(VALUE hash, const std::string& key, VALUE value) {
-    rb_hash_aset(hash, rb_str_new_cstr(key.c_str()), value);
-  }
-
-  bool isNonEmptyHash(VALUE hash) {
-      return (!NIL_P(hash) && RB_TYPE_P(hash, T_HASH) && RHASH_SIZE(hash) > 0);
-  }
-}
+using criteo::mesos::RubyEngineSingleton;
+using namespace criteo::mesos::helpers;
 
 
 extern "C" {
@@ -127,28 +114,17 @@ VALUE wrapExecutorInfo(const mesos::ExecutorInfo& executorInfo)
 ////////////////////////////////////////////////////////////////////////////////
 // build the RubyHook and load a Ruby script located by the 'script_path' parameter
 RubyHook::RubyHook(const mesos::Parameters& parameters)
-  : ruby(ScriptName)
 {
-  std::string scriptpath;
-  foreach (const mesos::Parameter& parameter, parameters.parameter()) {
-    if (parameter.has_key() && parameter.key() == ScriptPathParam && parameter.has_value()) {
-      scriptpath = parameter.value();
-    }
-  }
-
-  if (scriptpath.empty()) {
-    throw std::invalid_argument("missing parameter " ScriptPathParam);
-  }
-  if (!ruby.load_script(scriptpath)) {
-    throw std::runtime_error(ruby.handle_exception());
-  }
+  RubyEngineSingleton::getInstance().start(parameters);
 }
 
 // mesos::Hook callback on slaveExecutorEnvironmentDecorator
 Result<mesos::Environment> RubyHook::slaveExecutorEnvironmentDecorator(
   const mesos::ExecutorInfo& executorInfo)
 {
-  synchronized (mutex) { // Ruby VM is not reentrant
+  RubyEngineSingleton& ruby = RubyEngineSingleton::getInstance();
+  std::mutex * mutex = ruby.mutex();
+  synchronized(mutex) { // Ruby VM is not reentrant
     if (ruby.is_callback_defined(SlaveExecutorEnvironmentDecorator)) {
       // call Ruby in a protect env to avoid exception leakage
       int state = 0;
@@ -159,15 +135,15 @@ Result<mesos::Environment> RubyHook::slaveExecutorEnvironmentDecorator(
       }
 
       // fill in the Env from Ruby from return value; expect same structure as input
-      if (isNonEmptyHash(result)) {
+      if (is_non_empty_hash(result)) {
         VALUE ruby_cmd = rb_hash_lookup(result, rb_str_new_cstr("command"));
-        if (isNonEmptyHash(ruby_cmd)) {
+        if (is_non_empty_hash(ruby_cmd)) {
           VALUE ruby_env = rb_hash_lookup(ruby_cmd, rb_str_new_cstr("environment"));
-          if (isNonEmptyHash(ruby_env)) {
+          if (is_non_empty_hash(ruby_env)) {
             mesos::Environment env;
             // iterate over the hash and add env from kv-pairs
             // Ruby prototype for hash foreach closure is boggus and requires -fpermissive to compile.
-            rb_hash_foreach(ruby_env, unwrapEnv, (VALUE)&env);
+            rb_hash_foreach(ruby_env, (int (*)(...))unwrapEnv, (VALUE)&env);
             return env; // will *replace* original env (i.e. not merge)
           }
         }
@@ -186,7 +162,10 @@ Result<mesos::Labels> RubyHook::slaveRunTaskLabelDecorator(
   const mesos::FrameworkInfo& frameworkInfo,
   const mesos::SlaveInfo& slaveInfo)
 {
-  synchronized (mutex) { // Ruby VM is not reentrant
+  RubyEngineSingleton& ruby = RubyEngineSingleton::getInstance();
+
+  std::mutex * mutex = ruby.mutex();
+  synchronized(mutex) { // Ruby VM is not reentrant
     if (ruby.is_callback_defined(SlaveRunTaskLabelDecorator)) {
       // call Ruby in a protect env to avoid exception leakage
       int state = 0;
@@ -197,13 +176,13 @@ Result<mesos::Labels> RubyHook::slaveRunTaskLabelDecorator(
       }
 
       // fill in the Labels from Ruby from return value; expect same structure as input
-      if (isNonEmptyHash(result)) {
+      if (is_non_empty_hash(result)) {
         VALUE ruby_labels = rb_hash_lookup(result, rb_str_new_cstr("labels"));
-        if (isNonEmptyHash(ruby_labels)) {
+        if (is_non_empty_hash(ruby_labels)) {
           mesos::Labels labels;
           // iterate over the hash and add labels from kv-pairs
           // Ruby prototype for hash foreach closure is boggus and requires -fpermissive to compile.
-          rb_hash_foreach(ruby_labels, unwrapLabels, (VALUE)&labels);
+          rb_hash_foreach(ruby_labels, (int (*)(...))unwrapLabels, (VALUE)&labels);
           return labels; // will *replace* original labels (i.e. not merge)
         }
       }
@@ -219,6 +198,8 @@ Try<Nothing> RubyHook::slaveRemoveExecutorHook(
   const mesos::FrameworkInfo& frameworkInfo,
   const mesos::ExecutorInfo& executorInfo)
 {
+  RubyEngineSingleton& ruby = RubyEngineSingleton::getInstance();
+  std::mutex * mutex = ruby.mutex();
   synchronized (mutex) { // Ruby VM is not reentrant
     if (ruby.is_callback_defined(SlaveRemoveExecutorHook)) {
       // call Ruby in a protect env to avoid exception leakage

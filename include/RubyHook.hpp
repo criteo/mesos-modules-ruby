@@ -10,9 +10,6 @@
 
 class RubyHook : public mesos::Hook
 {
-  std::mutex mutex;
-  RubyEngine ruby;
-
 public:
   RubyHook(const mesos::Parameters& parameters);
 

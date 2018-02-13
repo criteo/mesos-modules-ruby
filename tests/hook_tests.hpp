@@ -1,3 +1,6 @@
+#ifndef ___HOOK_TESTS_HPP__
+#define ___HOOK_TESTS_HPP__
+
 #include "RubyHook.hpp"
 #include <memory>
 #include <gtest/gtest.h>
@@ -97,17 +100,4 @@ TEST_F(RubyHookTest, SlaveExecutorEnvironmentDecorator) {
 
 }
 
-int main(int argc, char* argv[])
-{
-  google::InitGoogleLogging(argv[0]);
-
-  ::testing::InitGoogleTest(&argc, argv);
-
-  RubyHookTest::script_path_str = (argc > 1 ? argv[1] : "./hook.rb");
-
-  auto res = RUN_ALL_TESTS();
-
-  google::ShutdownGoogleLogging();
-
-  return res;
-}
+#endif //___HOOK_TESTS_HPP__
