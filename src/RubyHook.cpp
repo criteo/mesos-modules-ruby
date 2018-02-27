@@ -3,6 +3,7 @@
 
 #include "RubyHook.hpp"
 #include <stdexcept>
+#include <string>
 
 #include <ruby.h>
 
@@ -59,28 +60,6 @@ static int unwrapEnv(VALUE name, VALUE value, VALUE arg)
   return ST_CONTINUE;
 }
 
-// map parts of mesos::TaskInfo into a Ruby hash structure
-VALUE wrapTaskInfo(const mesos::TaskInfo& taskInfo)
-{
-  // create top level hash with required PB fields
-  VALUE hash = rb_hash_new();
-  hash_set(hash, "name", taskInfo.name());
-  hash_set(hash, "task_id", taskInfo.task_id().value());
-  hash_set(hash, "slave_id", taskInfo.slave_id().value());
-
-  // add Labels as a strings hash and insert it into main hash as "labels"
-  // e.g. in Ruby use: taskInfo["labels"]["foo"] = "bar"
-  VALUE labels = rb_hash_new();
-  if (taskInfo.has_labels()) {
-    foreach (const mesos::Label& l, taskInfo.labels().labels()) {
-      hash_set(labels, l.key(), l.has_value() ? l.value() : "");
-    }
-  }
-  hash_set(hash, "labels", labels);
-
-  return hash;
-}
-
 // map parts of mesos::ExecutorInfo into a Ruby hash structure
 VALUE wrapExecutorInfo(const mesos::ExecutorInfo& executorInfo)
 {
@@ -104,11 +83,47 @@ VALUE wrapExecutorInfo(const mesos::ExecutorInfo& executorInfo)
     VALUE user = commandInfo.has_user() ? rb_str_new_cstr(commandInfo.user().c_str())
                                         : rb_str_new_cstr("no_user_found");
     hash_set(command, "user", user);
+    VALUE value = commandInfo.has_value() ? rb_str_new_cstr(commandInfo.value().c_str())
+        : rb_str_new_cstr("no command value");
+    hash_set(command, "value", value);
+
+    VALUE args = rb_ary_new();
+    foreach (const std::string& arg, commandInfo.arguments()) {
+        ary_push(args, arg);
+    }
+    hash_set(command, "args", args);
   }
   hash_set(hash, "command", command);
 
   return hash;
 }
+
+// map parts of mesos::TaskInfo into a Ruby hash structure
+VALUE wrapTaskInfo(const mesos::TaskInfo& taskInfo)
+{
+  // create top level hash with required PB fields
+  VALUE hash = rb_hash_new();
+  hash_set(hash, "name", taskInfo.name());
+  hash_set(hash, "task_id", taskInfo.task_id().value());
+  hash_set(hash, "slave_id", taskInfo.slave_id().value());
+  if (taskInfo.has_executor()) {
+    const mesos::ExecutorInfo& executorInfo = taskInfo.executor();
+    hash_set(hash, "executor", wrapExecutorInfo(executorInfo));
+  }
+
+  // add Labels as a strings hash and insert it into main hash as "labels"
+  // e.g. in Ruby use: taskInfo["labels"]["foo"] = "bar"
+  VALUE labels = rb_hash_new();
+  if (taskInfo.has_labels()) {
+    foreach (const mesos::Label& l, taskInfo.labels().labels()) {
+      hash_set(labels, l.key(), l.has_value() ? l.value() : "");
+    }
+  }
+  hash_set(hash, "labels", labels);
+
+  return hash;
+}
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////

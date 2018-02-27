@@ -14,6 +14,7 @@ namespace criteo {
     namespace helpers{
       void hash_set(VALUE hash, const std::string& key, const std::string& value);
       void hash_set(VALUE hash, const std::string& key, VALUE value);
+      void ary_push(VALUE hash, const std::string& el);
       bool is_non_empty_hash(VALUE hash);
       bool is_non_empty_array(VALUE array);
     }

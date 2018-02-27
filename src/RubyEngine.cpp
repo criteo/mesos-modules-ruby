@@ -29,6 +29,11 @@ namespace criteo {
         rb_hash_aset(hash, rb_str_new_cstr(key.c_str()), value);
       }
 
+      void ary_push(VALUE ary, const std::string& el)
+      {
+        rb_ary_push(ary, rb_str_new_cstr(el.c_str()));
+      }
+
       bool is_non_empty_hash(VALUE hash)
       {
         return (!NIL_P(hash) && RB_TYPE_P(hash, T_HASH) && RHASH_SIZE(hash) > 0);
